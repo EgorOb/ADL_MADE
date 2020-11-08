@@ -7,7 +7,7 @@ class QLerning():
     '''
     Обучение поведения агента алгоритмом QL
     '''
-    def __init__(self, model, lf=0.5, df=0.5):
+    def __init__(self, model, alpha=0.5, gamma=0.5, epsilon=0.0):
 #         Модель поведения агента
         self._model = model
 #       Матрица полезности для агента определенная в модели
@@ -15,10 +15,12 @@ class QLerning():
 #       Матрица полезности выдающая максимальное среднее значение выигрыша
         self._best_matrix_q = self._matrix_q.copy()
 #       Фактор обучения. Чем он выше, тем сильнее агент доверяет новой информации.
-        self.lf = lf
+        self.alpha = alpha
 #       Фактор дисконтирования. Чем он меньше, тем меньше агент задумывается о выгоде от будущих своих действий.
-        self.df = df
+        self.gamma = gamma
     
+        self.epsilon = epsilon
+        
         self._mean_reward = -1000
         self._mean_reward_from_iter = -1000
         
@@ -27,18 +29,26 @@ class QLerning():
         self._last_action = 0
         self._last_reward = 0
 
+    def _strategy_lerning(self, ):
+        if random.random() < epsilon:
+            row = random.choice(self.model.space_action)
+    
     def _choice_action(self, current_state):
         '''Выбор действия по матрице полезности от текущего состояния'''
-        row = self._model.convert_state_action_to_index_matrix_q(current_state, 0)[0]
+        
+        if random.random() < epsilon:
+            row = random.choice(self.model.space_action)
+        else:
+            row, col = self._model.convert_state_action_to_index_matrix_q(current_state, 0)
         return np.argmax(self._matrix_q[row,:])
         
     def _update_matrix_q(self,):
         '''Обновление матрицы полезности для предыдущего шага'''
-        current_index = self._model.convert_state_action_to_index_matrix_q(self._current_state, 0)
+        current_index, _ = self._model.convert_state_action_to_index_matrix_q(self._current_state, 0)
         last_index = self._model.convert_state_action_to_index_matrix_q(self._last_state, self._last_action)
         
-        self._max_q = max(self._matrix_q[current_index[0], :])
-        self._matrix_q[last_index] += self.lf * (self._last_reward + self.df * self._max_q - self._matrix_q[last_index])    
+        self._max_q = max(self._matrix_q[current_index, :])
+        self._matrix_q[last_index] += self.alpha * (self._last_reward + self.gamma * self._max_q - self._matrix_q[last_index])    
     
     def _update_state_action(self,):
         """
@@ -54,7 +64,7 @@ class QLerning():
         self._last_action = self._current_action
         
 #         Определение значений для текущего шага
-        new_state, reward, self._game_is_done = self._model.get_new_state_from_lerning(self._current_state, self._last_action)
+        new_state, reward, self._game_is_done = self._model.get_new_state(self._last_action)
         if self._game_is_done == False:
             self._current_state = new_state
             self._current_action = self._model.choice_action(self._current_state)
@@ -108,7 +118,7 @@ class QLerning():
                 self._draw_plot(list_i, list_mean_rewards)
         
         if show_fit:
-            print("best value all time=", self._mean_reward_from_iter)
+            print("all time best=", self._mean_reward_from_iter)
             plt.ioff() 
     
     def get_mean_reward(self,):
@@ -126,10 +136,6 @@ class QLerning():
     def get_best_matrix_q(self,):
         '''Вывод лучшей матрицы полезности'''
         return self._best_matrix_q
-    
-    def get_matrix_actions(self,):
-        """Вывод матрицы действий в зависимости от состояний"""
-        return np.argmax(self._best_matrix_q, axis=1)
     
     def _draw_plot(self, data_x, data_y):
         '''Отрисовка значений среднего выигрыша'''
