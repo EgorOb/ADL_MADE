@@ -84,26 +84,27 @@ class QLerning():
     def traning_model(self, 
                       n_train = 1000,
                       show_fit = False,
-                      delta_show = 10, 
+                      delta_valid = 10, 
                       n_games = 10000):
         
         """
         Обучение для n_train игр
             n_train - число итераций для тренировки модели поведения в среде
             show_fit - флаг отвечающий за отображение изменения среднего выигрыша в процессе обучения
-            delta_show - через сколько итераций n_train показывать изменение среднего выигрыша в процессе обучения
+            delta_valid - через сколько итераций n_train рассчитывать средний выигрыш по обученной стратегии
             n_games - число игр, для подсчета среднего выигрыша
         """
+        list_mean_rewards = []
+        list_i = []
+        
         if show_fit:
             self._fig, self._ax = plt.subplots()
-            list_mean_rewards = []
-            list_i = []
             plt.ion()
         
         for i in tqdm(range(n_train)):
             self._one_game_traning()
 #             Обработчик события отрисовки
-            if show_fit and i%delta_show == 0:
+            if i%delta_valid == 0:
                 self._model.game(matrix_q=self._matrix_q, n_games=n_games)
                 self._mean_reward = self._model.get_mean_reward()
 #                 Обновление информации о лучшей матрице полезности
@@ -114,12 +115,14 @@ class QLerning():
                 
                 list_mean_rewards.append(self._mean_reward)
                 list_i.append(i)
+                if show_fit:
 #                 Отрисовка среднего выигрыша
-                self._draw_plot(list_i, list_mean_rewards)
+                    self._draw_plot(list_i, list_mean_rewards)
         
+        print("all time best=", self._mean_reward_from_iter)
+        print("current value=", self._mean_reward)
         if show_fit:
-            print("all time best=", self._mean_reward_from_iter)
-            plt.ioff() 
+            plt.ioff()
     
     def get_mean_reward(self,):
         '''Вывод текущего среднего выигрыша'''
