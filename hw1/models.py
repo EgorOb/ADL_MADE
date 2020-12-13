@@ -170,7 +170,7 @@ class SimpleModel(ModelUtils, BlackjackEnv):
     Простая модель игры в блэкджэк
     '''
     def __init__(self, natural=True, matrix_q=None, multiproc_game=False, n_cpu=mp.cpu_count()):
-        self.deck = Deck(shufle_treshold=52)
+        self.deck = Deck(shufle_treshold=47)
         super(SimpleModel, self).__init__(natural)
         self.space_action = np.arange(2)
 #         Минимально возможное значнение карт на руках
@@ -187,6 +187,7 @@ class SimpleModel(ModelUtils, BlackjackEnv):
         sum_reward = 0
         party = 0
         self.reset_game()
+#         print("Deck = ", self.deck.need_shufle())
         while self.deck.need_shufle() == False:
             done = False
             while done == False:
@@ -296,7 +297,7 @@ class DoubleModel(SimpleModel):
         """
         if isinstance(new_matrix_q, np.ndarray):
             size = new_matrix_q.shape
-            assert size == (180, 3), 'Размер матрицы полезности должен быть 18x3'
+            assert size == (180, 3), 'Размер матрицы полезности должен быть 180x3'
             self._matrix_q = new_matrix_q
         else:
             self._matrix_q = np.random.rand(180,3)        
@@ -309,11 +310,11 @@ class СountingModel(DoubleModel):
     def __init__(self, natural=True, matrix_q=None, multiproc_game=False, n_cpu=mp.cpu_count(),
                  shufle_treshold=15, counts_shuffle=1, model_score="plus_minus"):
         
+        super(СountingModel, self).__init__(natural, matrix_q, multiproc_game, n_cpu)
+        
         self.deck = Deck(shufle_treshold=shufle_treshold,
                          counts_shuffle=counts_shuffle,
                          model_score=model_score)
-
-        super(СountingModel, self).__init__(natural, matrix_q, multiproc_game, n_cpu)
     
     def replace_matrix_q(self, new_matrix_q):
         """
